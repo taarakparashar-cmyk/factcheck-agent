@@ -23,12 +23,9 @@ f = st.file_uploader("PDF document", type="pdf")
 maxc = st.slider("Max claims to check", 5, 25, 15, help="Free tier is rate-limited; fewer claims = faster.")
 if f and key and st.button("Run fact-check", type="primary"):
     bar = st.progress(0.0, text="Extracting claims…")
-    try:
-        res = run(key, f, maxc, lambda d, t: bar.progress(d / max(t, 1), text=f"Verified {d} of {t} claims"))
-        st.session_state["res"] = res
-    except Exception as e:
-        st.error(str(e))
+    res = run(key, f, maxc, lambda d, t: bar.progress(d / max(t, 1), text=f"Verified {d} of {t} claims"))
     bar.empty()
+    st.session_state["res"] = res
 elif f and not key:
     st.info("Add an API key in the sidebar to continue.")
 
