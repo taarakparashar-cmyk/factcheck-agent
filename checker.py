@@ -1,5 +1,6 @@
 """Faster Truth Layer pipeline: parallel evidence gathering + batched Gemini verification."""
 import json
+import os
 import re
 import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -10,7 +11,8 @@ from ddgs import DDGS
 from pypdf import PdfReader
 
 CHECKER_BUILD = "OPTIMIZED CHECKER v3 — PARALLEL SEARCH + BATCH VERIFICATION"
-MODEL = "gemini-flash-latest"
+MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+FALLBACK_MODEL = "gemini-2.5-flash"
 TODAY = datetime.date.today().isoformat()
 MAX_SEARCH_WORKERS = 5
 SEARCH_RESULTS_PER_CLAIM = 4
@@ -67,62 +69,27 @@ def _json(text):
 
 def _ask(client, prompt):
     """Single model request; errors are surfaced instead of silently mislabeling claims."""
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-        config={"response_mime_type": "application/json"},
+    last_error = None
+    for model in dict.fromkeys([MODEL, FALLBACK_MODEL]):
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config={"response_mime_type": "application/json"},
+            )
+            parsed = _json(response.text)
+            if parsed is None:
+                raise ValueError(f"{model} returned invalid JSON")
+            return parsed
+        except Exception as exc:
+            last_error = exc
+            message = str(exc).lower()
+            # Fall back only for model availability errors, not invalid keys, quotas, or other failures.
+            if not ("404" in message or "not_found" in message or "not found" in message):
+                raise
+    raise RuntimeError(
+        f"No configured Gemini model was available. Tried {MODEL} and {FALLBACK_MODEL}. "
+        f"Last error: {last_error}. Check your available models using client.models.list()."
     )
-    return _json(response.text)
 
 
-
-def search_claim(item, n=SEARCH_RESULTS_PER_CLAIM):
-    """One web query per claim; creates its own DDGS instance for thread safety."""
-    claim = re.sub(r"\s+", " ", item.get("claim", "")).strip()[:200]
-    if not claim:
-        return []
-    try:
-        hits = list(DDGS().text(claim, max_results=n))
-        # Keep only the fields the verifier needs and trim snippets to control prompt size.
-        cleaned = []
-        for hit in hits[:n]:
-            cleaned.append({
-                "title": hit.get("title", ""),
-                "url": hit.get("href", ""),
-                "snippet": (hit.get("body", "") or "")[:350],
-            })
-        return cleaned
-    except Exception:
-        return []
-
-
-
-def run(api_key, file, max_claims=15, progress=lambda d, t: None):
-    client = genai.Client(api_key=api_key)
-
-
-    # 1) PDF text extraction
-    pages = read_pdf(file)
-    doc = "\n\n".join(f"[Page {page_no}]\n{text}" for page_no, text in pages)
-    doc = doc[:45000]  # reduce extraction prompt size versus the previous 60k-character cap
-
-
-    # 2) Extract claims in one Gemini request
-    claims = _ask(client, EXTRACT_PROMPT.format(n=max_claims, doc=doc)) or []
-    claims = claims[:max_claims]
-    if not claims:
-        return []
-
-
-    # 3) Gather web evidence concurrently; don't make Streamlit UI calls from worker threads.
-    evidence_by_index = {}
-    with ThreadPoolExecutor(max_workers=min(MAX_SEARCH_WORKERS, len(claims))) as pool:
-        futures = {pool.submit(search_claim, claim): i for i, claim in enumerate(claims)}
-        completed = 0
-        for future in as_completed(futures):
-            idx = futures[future]
-            try:
-                evidence_by_index[idx] = future.result()
-            except Exception:
-                evidence_by_index[idx] = []
-            completed += 1
