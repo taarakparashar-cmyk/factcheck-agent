@@ -10,7 +10,7 @@ from ddgs import DDGS
 from pypdf import PdfReader
 
 CHECKER_BUILD = "OPTIMIZED CHECKER v3 — PARALLEL SEARCH + BATCH VERIFICATION"
-MODEL = "gemini-flash-latest"
+MODEL = "gemini-3.5-flash-lite"
 TODAY = datetime.date.today().isoformat()
 MAX_SEARCH_WORKERS = 5
 SEARCH_RESULTS_PER_CLAIM = 4
