@@ -94,3 +94,35 @@ def search_claim(item, n=SEARCH_RESULTS_PER_CLAIM):
         return cleaned
     except Exception:
         return []
+
+
+
+def run(api_key, file, max_claims=15, progress=lambda d, t: None):
+    client = genai.Client(api_key=api_key)
+
+
+    # 1) PDF text extraction
+    pages = read_pdf(file)
+    doc = "\n\n".join(f"[Page {page_no}]\n{text}" for page_no, text in pages)
+    doc = doc[:45000]  # reduce extraction prompt size versus the previous 60k-character cap
+
+
+    # 2) Extract claims in one Gemini request
+    claims = _ask(client, EXTRACT_PROMPT.format(n=max_claims, doc=doc)) or []
+    claims = claims[:max_claims]
+    if not claims:
+        return []
+
+
+    # 3) Gather web evidence concurrently; don't make Streamlit UI calls from worker threads.
+    evidence_by_index = {}
+    with ThreadPoolExecutor(max_workers=min(MAX_SEARCH_WORKERS, len(claims))) as pool:
+        futures = {pool.submit(search_claim, claim): i for i, claim in enumerate(claims)}
+        completed = 0
+        for future in as_completed(futures):
+            idx = futures[future]
+            try:
+                evidence_by_index[idx] = future.result()
+            except Exception:
+                evidence_by_index[idx] = []
+            completed += 1
