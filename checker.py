@@ -13,8 +13,8 @@ from ddgs import DDGS
 from pypdf import PdfReader
 
 CHECKER_BUILD = "QUALITY CHECKER v4 — ADAPTIVE EVIDENCE RETRIEVAL"
-MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
-FALLBACK_MODEL = "gemini-2.5-flash"
+MODEL = os.getenv("gemini-3.5-flash-lite", "gemini-3.8-flash")
+FALLBACK_MODEL = "gemini-3.5-flash-lite"
 TODAY = datetime.date.today().isoformat()
 MAX_SEARCH_WORKERS = 3
 SEARCH_RESULTS_PER_CLAIM = 5
