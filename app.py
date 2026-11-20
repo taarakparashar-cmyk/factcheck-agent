@@ -10,7 +10,7 @@ from checker import run, CHECKER_BUILD
 
 st.set_page_config(page_title="Truth Layer | Fact Check", page_icon="🔎", layout="wide")
 st.markdown("""<style>.block-container{max-width:1120px;padding-top:1.8rem}.tl-head{padding:24px;border-radius:16px;background:linear-gradient(120deg,#123b46,#176e69);color:#fff}.tl-small{opacity:.8;font-size:14px}.tl-card{border:1px solid #a3a3a344;border-radius:12px;padding:16px;margin:12px 0}.tl-claim{font-weight:650;font-size:17px}</style>""", unsafe_allow_html=True)
-st.markdown('<div class="tl-head"><div class="tl-small">TRUTH LAYER · V5 QUALITY BUILD</div><h1 style="color:white;margin:8px 0">Evidence-first PDF Fact Checker</h1><div class="tl-small">Atomic claims · Coverage audit · Adaptive search · Source-linked verdicts</div></div>', unsafe_allow_html=True)
+st.markdown('<div class="tl-head"><div class="tl-small">TRUTH LAYER</div><h1 style="color:white;margin:8px 0">Fact checker</h1><div class="tl-small">Atomic claims · Coverage audit · Adaptive search · Source-linked verdicts</div></div>', unsafe_allow_html=True)
 st.caption(f"Backend: {CHECKER_BUILD}")
 try:
     key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
