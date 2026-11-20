@@ -5,7 +5,7 @@ from google import genai
 from ddgs import DDGS
 from pypdf import PdfReader
 
-MODEL = "gemini-flash-latest"  # alias to the current free Flash model; change if Google renames it
+MODEL = "gemini-3.8-flash" # alias to the current free Flash model; change if Google renames it
 TODAY = datetime.date.today().isoformat()
 
 EXTRACT_PROMPT = """You are a meticulous fact-checking analyst. From the document, extract checkable factual
@@ -44,7 +44,10 @@ def _json(text):
     return json.loads(m.group(1)) if m else None
 
 
-MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", MODEL]
+MODELS = [
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite"
+]
 
 
 def _ask(client, prompt, retries=3):
