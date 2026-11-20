@@ -20,12 +20,11 @@ if not key:
     key = st.sidebar.text_input("Gemini API key (free)", type="password", help="Only used for this session.")
 
 f = st.file_uploader("PDF document", type="pdf")
-maxc = st.slider("Max claims to check", 5, 20, 12, help="Free tier is rate-limited; fewer claims = faster.")
+maxc = st.slider("Max claims to check", 5, 25, 15, help="Free tier is rate-limited; fewer claims = faster.")
 if f and key and st.button("Run fact-check", type="primary"):
-    bar = st.progress(0.0, text="Working…")
-    logbox = st.container()
+    bar = st.progress(0.0, text="Extracting claims…")
     try:
-        res = run(key, f, maxc, lambda d, t: bar.progress(d / max(t, 1), text=f"Verified {d} of {t} claims"), lambda m: logbox.caption(m))
+        res = run(key, f, maxc, lambda d, t: bar.progress(d / max(t, 1), text=f"Verified {d} of {t} claims"))
         st.session_state["res"] = res
     except Exception as e:
         st.error(str(e))
