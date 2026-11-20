@@ -43,16 +43,25 @@ def _json(text):
     return json.loads(m.group(1)) if m else None
 
 
-def _ask(client, prompt, retries=4):
-    for i in range(retries):
-        try:
-            r = client.models.generate_content(model=MODEL, contents=prompt,
-                                               config={"response_mime_type": "application/json"})
-            return _json(r.text)
-        except Exception as e:
-            if i == retries - 1:
-                raise
-            time.sleep(8 * (i + 1))  # free tier rate limits: back off and retry
+MODELS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+
+
+def _ask(client, prompt, retries=3):
+    """Try each free model in turn; back off on rate limits; surface readable errors."""
+    last = None
+    for model in MODELS:
+        for i in range(retries):
+            try:
+                r = client.models.generate_content(model=model, contents=prompt,
+                                                   config={"response_mime_type": "application/json"})
+                return _json(r.text)
+            except Exception as e:
+                last = e
+                code = getattr(e, "code", None)
+                if code in (429, 503) and i < retries - 1:
+                    time.sleep(10 * (i + 1)); continue  # free-tier rate limit: wait, retry
+                break  # 400/401/403/404 or retries used up: move on to the next model
+    raise RuntimeError(f"Gemini request failed on all models. Last error: {last}")
 
 
 def search(claim, n=5):
