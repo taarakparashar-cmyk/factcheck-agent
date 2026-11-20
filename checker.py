@@ -14,8 +14,8 @@ from google import genai
 from pypdf import PdfReader
 
 CHECKER_BUILD = "V5 · COVERAGE AUDIT + ADAPTIVE EVIDENCE"
-PRIMARY_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
-FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
+PRIMARY_MODEL = os.getenv("gemini-3.8-flash", "gemini-3.5-flash-lite")
+FALLBACK_MODEL = os.getenv("gemini-3.8-flash")
 LOG = logging.getLogger(__name__)
 VERDICTS = {"Verified", "Inaccurate", "False", "Unverifiable"}
 
