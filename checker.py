@@ -94,6 +94,9 @@ def _ask(client, prompt):
         f"No configured Gemini model was available. Tried {MODEL} and {FALLBACK_MODEL}. "
         f"Last error: {last_error}. Check your available models using client.models.list()."
     )
+
+
+
 def _clean_hits(raw, limit=5):
     seen, cleaned = set(), []
     for hit in raw or []:
@@ -219,3 +222,11 @@ def run(api_key, file, max_claims=15, progress=lambda d, t: None):
             label = "Unverifiable"
         # A source-less claim cannot receive an evidence-backed decisive verdict.
         if not hits:
+            label = "Unverifiable"
+        results.append({**claim, "verdict": label,
+                        "confidence": verdict.get("confidence", 0) if hits else 0,
+                        "real_fact": verdict.get("real_fact", ""),
+                        "explanation": (verdict.get("explanation", "") if hits else
+                                        "No usable search evidence retrieved; verification was not possible."),
+                        "sources": sources})
+    return results
