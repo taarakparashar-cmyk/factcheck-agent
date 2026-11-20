@@ -43,7 +43,7 @@ def _json(text):
     return json.loads(m.group(1)) if m else None
 
 
-MODELS = [MODEL, "gemini-3.8-flash","gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+MODELS = [MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
 
 
 def _ask(client, prompt, retries=3):
